@@ -13,13 +13,13 @@ from flask.ext.script import Manager
 
 # initialization
 app = Flask(__name__)
-manager= Manager(app)
 
 # Read config file
 app.config.from_pyfile('config.py')
 
 # extensions
 auth = HTTPBasicAuth()
+manager = Manager(app)
 
 
 def write_sms(sms):
