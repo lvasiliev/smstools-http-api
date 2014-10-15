@@ -57,6 +57,7 @@ def write_sms(sms):
                 f.write(msg + '\n')
                 f.close
                 os.rename(msg_file_lock, msg_file)
+                os.chmod(msg_file, 0666)
                 app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
                 message_id = msg_file.split('/')[-1]
             result['message_id'][mobile] = message_id
@@ -114,6 +115,7 @@ def get_sms(message_id):
                     To = line.split('To: ')[1].rstrip()
                 if line.startswith('Sent: '):
                     Sent = line.split('Sent: ')[1].rstrip()
+                    break
         return jsonify({'message_id': message_id, 'Sent': Sent, 'To': To})
     except EnvironmentError:
         return not_found(404)
