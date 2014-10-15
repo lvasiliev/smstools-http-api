@@ -33,22 +33,19 @@ def write_sms(sms):
             app.logger.info('Mobile phone %s is not valid [%s]' % (mobile, auth.username()))
             result[mobile] = 'Not valid'
             continue
-
         if access_mobile(mobile):
             msg_file_lock=tempfile.mkstemp(dir=app.config['OUTGOING'],prefix=app.config['PREFIX'],suffix='.LOCK')[1]
             msg_file = msg_file_lock.split('.LOCK')[0]
             msg_len=len(sms['text'])
             try:
+                msg = sms['text'].encode('us-ascii')
                 if msg_len > 160:
                     parts_count = msg_len / 152 + (msg_len % 152 > 0)
-
-                msg = sms['text'].encode('us-ascii')
             except UnicodeEncodeError:
                 ucs_field = True
+                msg = sms['text'].encode('utf-16-be')
                 if msg_len > 70:
                     parts_count = msg_len / 66 + (msg_len % 66 > 0)
-
-                msg = sms['text'].encode('utf-16-be')
             with open(msg_file_lock, 'w') as f:
                 f.write('From: smstools-http-api\n')
                 if ucs_field:
@@ -126,7 +123,6 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(exception):
-    app.logger.exception(exception)
     return make_response(jsonify({'error': 'Internal error'}), 500)
 
 @app.route('/api/v1.0/sms/outgoing', methods=['POST'])
