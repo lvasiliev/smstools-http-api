@@ -34,6 +34,7 @@ API Documentation
 -----------------
 
 - POST **/api/v1.0/sms/outgoing**
+
     Sending new sms message.<br>
     The body must contain a JSON object that defines `mobiles` array and `text` fields.<br>
     On success a status code 201 is returned. The body of the response contains a JSON object:
@@ -46,6 +47,7 @@ API Documentation
 
 
 - GET **/api/v1.0/sms/sent/&lt;path:message_id&gt;**
+
     Getting information of the sent message using message_id.<br>
     The body of the response contains a JSON object with the requested message_id:
     - `Sent` - time of sent sms message. 
