@@ -162,6 +162,7 @@ if __name__ == '__main__':
         file_handler.setLevel(level)
         werkzeug_file = logging.getLogger('werkzeug')
         werkzeug_file.addHandler(file_handler)
+        app.logger.setLevel(level)
         app.logger.addHandler(file_handler)
 
     manager.run()
