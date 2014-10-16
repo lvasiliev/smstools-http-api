@@ -53,7 +53,7 @@ API Documentation
     - `From` - user who sent.
     - `To` - phone number of the recipient.
     - `Sent` - time of sent sms message.
-    - `message_id` - files (message_id) in spool directory.
+    - `message_id` - filename (message_id) in spool directory.
 
     On failure status code 404 (not found) is returned.<br>
     
