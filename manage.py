@@ -101,19 +101,16 @@ def get_sent_sms():
 @app.route('/api/v1.0/sms/sent/<path:message_id>', methods=['GET'])
 @auth.login_required
 def get_sms(message_id):
-    Sent = None
     sent_dir = app.config['SENT'] + '/'
-    To = None
+    msg_fields = { 'From: ': None, 'To: ': None, 'Sent: ': None, 'message_id': message_id }
 
     try:
         with open(sent_dir + message_id) as f:
             for line in f:
-                if line.startswith('To: '):
-                    To = line.split('To: ')[1].rstrip()
-                if line.startswith('Sent: '):
-                    Sent = line.split('Sent: ')[1].rstrip()
-                    break
-        return jsonify({'message_id': message_id, 'Sent': Sent, 'To': To})
+                for field in msg_fields:
+                    if line.startswith(field):
+                        msg_fields[field] = line.split(field)[1].rstrip()
+        return jsonify(msg_fields)
     except EnvironmentError:
         return not_found(404)
 
