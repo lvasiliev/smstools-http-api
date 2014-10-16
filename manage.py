@@ -111,6 +111,8 @@ def get_sms(message_id):
                     s_field = field + ': '
                     if line.startswith(s_field):
                         msg_fields[field] = line.split(s_field)[1].rstrip()
+                    if line.startswith('\n'):
+                        break
         return jsonify(msg_fields)
     except EnvironmentError:
         return not_found(404)
