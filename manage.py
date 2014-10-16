@@ -147,7 +147,7 @@ def create_sms():
     }
 
     result = write_sms(sms)
-    return jsonify( result ), 201
+    return jsonify(result), 201
 
 
 if __name__ == '__main__':
