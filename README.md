@@ -50,8 +50,9 @@ API Documentation
 
     Getting information of the sent message using message_id.<br>
     The body of the response contains a JSON object with the requested message_id:
-    - `Sent` - time of sent sms message. 
+    - `From` - user who sent.
     - `To` - phone number of the recipient.
+    - `Sent` - time of sent sms message.
     - `message_id` - files (message_id) in spool directory.
 
     On failure status code 404 (not found) is returned.<br>
@@ -90,6 +91,7 @@ The following `curl` command getting information of the sent message:
     Date: Tue, 13 Oct 2014 11:46:45 GMT
 
     {
+        "From": "lvv",
         "Sent": "14-10-13 11:37:09",
         "To": "79160000000",
         "message_id": "smsgw.http.2bpDiR"
