@@ -47,7 +47,7 @@ def write_sms(sms):
                 if msg_len > 70:
                     parts_count = msg_len / 66 + (msg_len % 66 > 0)
             with open(msg_file_lock, 'w') as f:
-                f.write('From: smstools-http-api\n')
+                f.write('From: ' + auth.username() + '\n')
                 if ucs_field:
                     f.write('Alphabet: UCS\n')
                 f.write('To: ' + mobile + '\n\n')
