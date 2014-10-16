@@ -102,14 +102,15 @@ def get_sent_sms():
 @auth.login_required
 def get_sms(message_id):
     sent_dir = app.config['SENT'] + '/'
-    msg_fields = { 'From: ': None, 'To: ': None, 'Sent: ': None, 'message_id': message_id }
+    msg_fields = { 'From': None, 'To': None, 'Sent': None, 'message_id': message_id }
 
     try:
         with open(sent_dir + message_id) as f:
             for line in f:
                 for field in msg_fields:
-                    if line.startswith(field):
-                        msg_fields[field] = line.split(field)[1].rstrip()
+                    s_field = field + ': '
+                    if line.startswith(s_field):
+                        msg_fields[field] = line.split(s_field)[1].rstrip()
         return jsonify(msg_fields)
     except EnvironmentError:
         return not_found(404)
