@@ -5,7 +5,7 @@ PREFIX="smsgw.http."
 
 # Logfile options
 LOGFILE= {
-    "filename": "/var/log/smsd/smstools-http-api.log",
+    "filename": "log/smstools-http-api.log",
     "maxBytes": 512000,
     "backupCount": 10,
     "level": "logging.DEBUG",
