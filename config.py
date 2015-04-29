@@ -3,14 +3,6 @@ OUTGOING="/var/spool/sms/outgoing"
 SENT="/var/spool/sms/sent"
 PREFIX="smsgw.http."
 
-# Logfile options
-LOGFILE= {
-    "filename": "log/smstools-http-api.log",
-    "maxBytes": 512000,
-    "backupCount": 10,
-    "level": "logging.DEBUG",
-}
-
 # Basic auth database
 USERS = {
     "lvv": "SecretPAss",

@@ -20,15 +20,15 @@ auth = HTTPBasicAuth()
 app.config.from_object('config')
 
 # Setup logging
-if not app.debug and app.config['LOGFILE']:
+if not app.debug:
     import logging
-    from logging.handlers import RotatingFileHandler
-    level = eval(app.config['LOGFILE'].get('level'))
-    file_handler = RotatingFileHandler(app.config['LOGFILE'].get('filename'), maxBytes=app.config['LOGFILE'].get('maxBytes'), backupCount=app.config['LOGFILE'].get('backupCount'))
-    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
-    app.logger.setLevel(level)
-    app.logger.addHandler(file_handler)
 
+    level = logging.DEBUG
+    logFormatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    app.logger.setLevel(level)
+    app.logger.addHandler(consoleHandler)
 
 def write_sms(sms):
     result = {}
@@ -48,12 +48,12 @@ def write_sms(sms):
             try:
                 msg = sms['text'].encode('us-ascii')
                 if msg_len > 160:
-                    parts_count = msg_len / 152 + (msg_len % 152 > 0)
+                    parts_count = msg_len / 153 + (msg_len % 153 > 0)
             except UnicodeEncodeError:
                 ucs_field = True
                 msg = sms['text'].encode('utf-16-be')
                 if msg_len > 70:
-                    parts_count = msg_len / 66 + (msg_len % 66 > 0)
+                    parts_count = msg_len / 67 + (msg_len % 67 > 0)
             with open(msg_file_lock, 'w') as f:
                 f.write('From: ' + auth.username() + '\n')
                 if ucs_field:
@@ -137,6 +137,9 @@ def internal_error(exception):
 @auth.login_required
 def create_sms():
     if not request.json:
+        return bad_request('Request error')
+
+    if type(request.json) != dict:
         return bad_request('Request error')
 
     if not request.json.has_key('mobiles'):
