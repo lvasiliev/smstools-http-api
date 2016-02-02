@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import tempfile
+from tempfile import mkstemp
+from os.path import basename
+from os import rename
 
-from flask import Flask
-from flask import jsonify
-from flask import make_response
-from flask import request
+from flask import Flask, jsonify, request, make_response
 from flask.ext.httpauth import HTTPBasicAuth
 
 from email.parser import Message, Parser
@@ -34,8 +32,12 @@ if not app.debug:
     app.logger.addHandler(consoleHandler)
 
 def write_sms(sms):
-    result = {'message_id': {}}
-    ucs_field = False
+    result = {
+        'message_id': {},
+        'sent_text': sms['text'],
+        'parts_count': 0,
+    }
+    parts_count = 0
 
     for mobile in sms['mobiles']:
         if not validate_mobile(mobile):
@@ -44,41 +46,39 @@ def write_sms(sms):
             continue
 
         if access_mobile(mobile):
-            _, msg_file = tempfile.mkstemp(dir=app.config['OUTGOING'],
-                                           prefix=app.config['PREFIX'],
-                                           suffix='.LOCK')
+            _, lock_file = mkstemp(dir=app.config['OUTGOING'],
+                                   prefix=app.config['PREFIX'],
+                                   suffix='.LOCK')
             text_len = len(sms['text'])
 
-            with open(msg_file, 'w') as fp:
+            with open(lock_file, 'w') as fp:
                 g = Generator(fp)
                 m = Message()
 
-                m.set_header('From', auth.username())
-                m.set_header('To', mobile)
-                m.set_header('Report', 'yes')
+                m.add_header('From', auth.username())
+                m.add_header('To', mobile)
+                m.add_header('Report', 'yes')
 
                 try:
-                    parts_count = text_len / 153 + (text_len % 153 > 0)
+                    result['parts_count'] = text_len / 153 + (text_len % 153 > 0)
                     m.set_payload(sms['text'].encode('us-ascii'))
-                    m.set_header('Alphabet', 'ISO')
+                    m.add_header('Alphabet', 'ISO')
                 except UnicodeEncodeError:
-                    parts_count = text_len / 67 + (text_len % 67 > 0)
+                    result['parts_count'] = text_len / 67 + (text_len % 67 > 0)
                     m.set_payload(sms['text'].encode('utf-16-be'))
-                    m.set_header('Alphabet', 'UCS2')
+                    m.add_header('Alphabet', 'UCS2')
 
                 g.close()
 
-            os.rename(msg_file, msg_file[:-5])
-            app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
-            message_id = msg_file.split('/')[-1][:-5]
-            result['message_id'][mobile] = message_id
+            msg_file = lock_file[:-5]
+            rename(lock_file, msg_file)
+            app.logger.info('Message from %s to %s placed to the spooler as %s' % (auth.username(), mobile, msg_file))
+            result['message_id'][mobile] = basename(msg_file)
 
         else:
             app.logger.info('Forbidden to send message from %s to %s' % (auth.username(), mobile))
             result['message_id'][mobile] = 'Forbidden'
 
-    result['sent_text'] = sms['text']
-    result['parts_count'] = parts_count
     return result
 
 def access_mobile(mobile):
@@ -112,18 +112,19 @@ def get_sent_sms():
 @auth.login_required
 def get_sms(message_id):
     sent_dir = app.config['SENT'] + '/'
-    msg_fields = { 'From': None, 'To': None, 'Sent': None, 'message_id': message_id }
 
     try:
-        with open(sent_dir + message_id) as f:
-            for line in f:
-                for field in msg_fields:
-                    s_field = field + ': '
-                    if line.startswith(s_field):
-                        msg_fields[field] = line.split(s_field)[1].rstrip()
-                    if line.startswith('\n'):
-                        break
-        return jsonify(msg_fields)
+        with open(sent_dir + message_id) as fp:
+            p = Parser()
+            m = p.parse(fp)
+
+            return jsonify({
+                'message_id': message_id,
+                'From': m.get('From'),
+                'Sent': m.get('Sent'),
+                'To':   m.get('To'),
+            })
+
     except EnvironmentError:
         return not_found(404)
 
