@@ -139,20 +139,26 @@ def internal_error(exception):
 @auth.login_required
 def create_sms():
     if not request.json:
-        return bad_request('Request error')
+        return bad_request('Body is not a valid JSON object')
 
-    if type(request.json) != dict:
-        return bad_request('Request error')
+    if not isinstance(request.json, dict):
+        return bad_request('Body is not a valid JSON object')
 
     if not request.json.has_key('mobiles'):
-        return bad_request('Request error')
+        return bad_request('Body is missing the "mobiles" key')
 
-    if not request.json.has_key('text') or type(request.json['text']) != unicode:
-        return bad_request('Request error')
+    if not request.json.has_key('text'):
+        return bad_request('Body is missing the "text" key')
+
+    if not isinstance(request.json['text'], unicode):
+        return bad_request('Body field "text" is not a string')
+
+    if not isinstance(request.json['mobiles'], list):
+        return bad_request('Body field "mobiles" is not a list of strings')
 
     for mobile in request.json['mobiles']:
         if type(mobile) != unicode:
-            return bad_request('Request error')
+            return bad_request('Body field "mobiles" is not a list of strings')
 
     sms = {
         'mobiles': request.json['mobiles'],
