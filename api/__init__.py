@@ -91,7 +91,7 @@ def bad_request(message):
     response = jsonify({'error': message})
     response.status_code = 400
     return response
-    
+
 @auth.get_password
 def get_password(username):
     if username in app.config['USERS']:
@@ -106,7 +106,7 @@ def unauthorized():
 def get_sent_sms():
     return 'OK'
 
-@app.route('/api/v1.0/sms/sent/<path:message_id>', methods=['GET'])
+@app.route('/api/v1.0/sms/sent/<string:message_id>', methods=['GET'])
 @auth.login_required
 def get_sms(message_id):
     sent_dir = app.config['SENT'] + '/'
