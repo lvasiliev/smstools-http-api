@@ -10,6 +10,9 @@ from flask import make_response
 from flask import request
 from flask.ext.httpauth import HTTPBasicAuth
 
+from email.parser import Message, Parser
+from email.generator import Generator
+
 # initialization
 app = Flask(__name__)
 
@@ -31,9 +34,7 @@ if not app.debug:
     app.logger.addHandler(consoleHandler)
 
 def write_sms(sms):
-    result = {}
-    result['message_id'] = {}
-    parts_count = 1
+    result = {'message_id': {}}
     ucs_field = False
 
     for mobile in sms['mobiles']:
@@ -41,51 +42,54 @@ def write_sms(sms):
             app.logger.info('Mobile phone %s is not valid [%s]' % (mobile, auth.username()))
             result[mobile] = 'Not valid'
             continue
+
         if access_mobile(mobile):
-            msg_file_lock=tempfile.mkstemp(dir=app.config['OUTGOING'],prefix=app.config['PREFIX'],suffix='.LOCK')[1]
-            msg_file = msg_file_lock.split('.LOCK')[0]
-            msg_len=len(sms['text'])
-            try:
-                msg = sms['text'].encode('us-ascii')
-                if msg_len > 160:
-                    parts_count = msg_len / 153 + (msg_len % 153 > 0)
-            except UnicodeEncodeError:
-                ucs_field = True
-                msg = sms['text'].encode('utf-16-be')
-                if msg_len > 70:
-                    parts_count = msg_len / 67 + (msg_len % 67 > 0)
-            with open(msg_file_lock, 'w') as f:
-                f.write('From: ' + auth.username() + '\n')
-                if ucs_field:
-                    f.write('Alphabet: UCS\n')
-                f.write('To: ' + mobile + '\n\n')
-                f.write(msg)
-                f.close
-                os.rename(msg_file_lock, msg_file)
-                os.chmod(msg_file, 0666)
-                app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
-                message_id = msg_file.split('/')[-1]
+            _, msg_file = tempfile.mkstemp(dir=app.config['OUTGOING'],
+                                           prefix=app.config['PREFIX'],
+                                           suffix='.LOCK')
+            text_len = len(sms['text'])
+
+            with open(msg_file, 'w') as fp:
+                g = Generator(fp)
+                m = Message()
+
+                m.set_header('From', auth.username())
+                m.set_header('To', mobile)
+                m.set_header('Report', 'yes')
+
+                try:
+                    parts_count = text_len / 153 + (text_len % 153 > 0)
+                    m.set_payload(sms['text'].encode('us-ascii'))
+                    m.set_header('Alphabet', 'ISO')
+                except UnicodeEncodeError:
+                    parts_count = text_len / 67 + (text_len % 67 > 0)
+                    m.set_payload(sms['text'].encode('utf-16-be'))
+                    m.set_header('Alphabet', 'UCS2')
+
+                g.close()
+
+            os.rename(msg_file, msg_file[:-5])
+            app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
+            message_id = msg_file.split('/')[-1][:-5]
             result['message_id'][mobile] = message_id
+
         else:
             app.logger.info('Forbidden to send message from %s to %s' % (auth.username(), mobile))
             result['message_id'][mobile] = 'Forbidden'
+
     result['sent_text'] = sms['text']
     result['parts_count'] = parts_count
     return result
 
 def access_mobile(mobile):
-    username = auth.username()
-    if app.config.has_key('MOBILE_PERMS') and app.config['MOBILE_PERMS'].has_key(username): 
-        if mobile in app.config['MOBILE_PERMS'].get(username):
-            return True
-        else:
-            return None
-    return True
+    if not app.config.has_key('MOBILE_PERMS'):
+        # Number access control disabled.
+        return True
+
+    return mobile in app.config['MOBILE_PERMS'].get(auth.username(), [])
 
 def validate_mobile(mobile):
-    if mobile.isdigit():
-        return True
-    return False
+    return mobile.isdigit()
 
 def bad_request(message):
     response = jsonify({'error': message})
@@ -94,9 +98,7 @@ def bad_request(message):
 
 @auth.get_password
 def get_password(username):
-    if username in app.config['USERS']:
-        return app.config['USERS'].get(username)
-    return None
+    return app.config['USERS'].get(username)
 
 @auth.error_handler
 def unauthorized():
