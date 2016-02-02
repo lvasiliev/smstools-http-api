@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
+
 from tempfile import mkstemp
-from os.path import basename
-from os import rename
+from os.path import basename, join as mkpath
+from os import rename, listdir, chmod
 
 from flask import Flask, jsonify, request, make_response
 from flask.ext.httpauth import HTTPBasicAuth
@@ -19,6 +21,9 @@ auth = HTTPBasicAuth()
 
 # Read config file
 app.config.from_object('config')
+
+# Valid message kinds (also spooler directories).
+KINDS = ['incoming', 'outgoing', 'checked', 'failed', 'sent']
 
 # Setup logging
 if not app.debug:
@@ -51,27 +56,25 @@ def write_sms(sms):
                                    suffix='.LOCK')
             text_len = len(sms['text'])
 
+            m = Message()
+            m.add_header('From', auth.username())
+            m.add_header('To', mobile)
+
+            try:
+                result['parts_count'] = text_len / 153 + (text_len % 153 > 0)
+                m.set_payload(sms['text'].encode('us-ascii'))
+                m.add_header('Alphabet', 'ISO')
+            except UnicodeEncodeError:
+                result['parts_count'] = text_len / 67 + (text_len % 67 > 0)
+                m.set_payload(sms['text'].encode('utf-16-be'))
+                m.add_header('Alphabet', 'UCS2')
+
             with open(lock_file, 'w') as fp:
-                g = Generator(fp)
-                m = Message()
-
-                m.add_header('From', auth.username())
-                m.add_header('To', mobile)
-                m.add_header('Report', 'yes')
-
-                try:
-                    result['parts_count'] = text_len / 153 + (text_len % 153 > 0)
-                    m.set_payload(sms['text'].encode('us-ascii'))
-                    m.add_header('Alphabet', 'ISO')
-                except UnicodeEncodeError:
-                    result['parts_count'] = text_len / 67 + (text_len % 67 > 0)
-                    m.set_payload(sms['text'].encode('utf-16-be'))
-                    m.add_header('Alphabet', 'UCS2')
-
-                g.close()
+                fp.write(m.as_string())
 
             msg_file = lock_file[:-5]
             rename(lock_file, msg_file)
+            chmod(msg_file, 0660)
             app.logger.info('Message from %s to %s placed to the spooler as %s' % (auth.username(), mobile, msg_file))
             result['message_id'][mobile] = basename(msg_file)
 
@@ -89,7 +92,7 @@ def access_mobile(mobile):
     return mobile in app.config['MOBILE_PERMS'].get(auth.username(), [])
 
 def validate_mobile(mobile):
-    return mobile.isdigit()
+    return re.match(r'^\+?\d+$', mobile) and True
 
 def bad_request(message):
     response = jsonify({'error': message})
@@ -104,32 +107,44 @@ def get_password(username):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 401)
 
-@app.route('/api/v1.0/sms', methods=['GET'])
-def get_sent_sms():
-    return 'OK'
-
-@app.route('/api/v1.0/sms/sent/<string:message_id>', methods=['GET'])
+@app.route('/api/v1.0/sms')
 @auth.login_required
-def get_sms(message_id):
-    sent_dir = app.config['SENT'] + '/'
+def get_sms():
+    return jsonify({})
+
+@app.route('/api/v1.0/sms/<kind>/')
+@auth.login_required
+def list_some_sms(kind):
+    if kind not in KINDS:
+        return not_found(None)
+
+    return jsonify({'message_id': listdir(app.config[kind.upper()])})
+
+@app.route('/api/v1.0/sms/<kind>/<message_id>')
+@auth.login_required
+def get_some_sms(kind, message_id):
+    if kind not in KINDS:
+        return not_found(None)
 
     try:
-        with open(sent_dir + message_id) as fp:
+        with open(mkpath(app.config[kind.upper()], message_id)) as fp:
             p = Parser()
             m = p.parse(fp)
 
-            return jsonify({
-                'message_id': message_id,
-                'From': m.get('From'),
-                'Sent': m.get('Sent'),
-                'To':   m.get('To'),
-            })
+            if m.get('Alphabet', '').startswith('UCS'):
+                charset = 'utf-16-be'
+            else:
+                charset = 'us-ascii'
+
+            m.add_header('message_id', message_id)
+            m.add_header('text', m.get_payload().decode(charset))
+            return jsonify(dict(m))
 
     except EnvironmentError:
-        return not_found(404)
+        return not_found(None)
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found(exception):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 @app.errorhandler(500)
@@ -168,3 +183,5 @@ def create_sms():
 
     result = write_sms(sms)
     return jsonify(result), 201
+
+# vim:set sw=4 ts=4 et:
