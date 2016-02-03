@@ -159,3 +159,27 @@ def create_sms():
 
     result = write_sms(sms)
     return jsonify(result), 201
+
+
+@app.route('/api/v1.0/sms/simple_send', methods=['GET'])
+@auth.login_required
+def simple_send_sms():
+    if not request.args:
+        return bad_request('missing required params')
+    if not request.args.has_key('to'):
+        return bad_request('missing required params')
+    if not request.args.has_key('text'):
+        return bad_request('missing required params')
+
+    app.logger.info('request.args: {}'.format(request.args))
+    app.logger.info('to: {}'.format(request.args.getlist('to')))
+
+    sms = {
+        'mobiles': request.args.getlist('to'),
+        'text': request.args['text']
+    }
+
+    app.logger.info(sms)
+
+    result = write_sms(sms)
+    return jsonify(result), 201
