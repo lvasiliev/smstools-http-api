@@ -171,8 +171,8 @@ def simple_send_sms():
     if not request.args.has_key('text'):
         return bad_request('missing required params')
 
-    app.logger.info('request.args: {}'.format(request.args))
-    app.logger.info('to: {}'.format(request.args.getlist('to')))
+    app.logger.debug('request.args: {}'.format(request.args))
+    app.logger.debug('to: {}'.format(request.args.getlist('to')))
 
     sms = {
         'mobiles': request.args.getlist('to'),
