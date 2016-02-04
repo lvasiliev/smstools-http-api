@@ -4,6 +4,8 @@
 import os
 import tempfile
 
+from werkzeug.security import check_password_hash
+
 from flask import Flask
 from flask import jsonify
 from flask import make_response
@@ -18,6 +20,16 @@ auth = HTTPBasicAuth()
 
 # Read config file
 app.config.from_object('config')
+
+if app.config.get('HASHED_PASSWORDS', False):
+    iterations = app.config.get('DEFAULT_HASH_ITERATIONS', 10000)
+    default_hash = 'pbkdf2:sha1:{}$_$'.format(iterations)  # invalid hash (if _ is never a salt)
+    @auth.verify_password
+    def verify(username, password):
+        # if the user doesn't exist, check against the invalid hash anyway to avoid a timing side-channel
+        hashed_password = app.config['USERS'].get(username, default_hash)
+        return check_password_hash(hashed_password, password)
+
 
 # Setup logging
 if not app.debug:
