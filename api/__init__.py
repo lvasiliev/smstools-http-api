@@ -60,7 +60,7 @@ def write_sms(sms):
                     f.write('Alphabet: UCS\n')
                 f.write('To: ' + mobile + '\n\n')
                 f.write(msg)
-                f.close
+                f.close()
                 os.rename(msg_file_lock, msg_file)
                 os.chmod(msg_file, 0666)
                 app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
