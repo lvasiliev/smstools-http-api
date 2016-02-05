@@ -134,7 +134,10 @@ def get_some_sms(kind, message_id):
             if m.get('Alphabet', '').startswith('UCS'):
                 charset = 'utf-16-be'
             else:
-                charset = 'us-ascii'
+                # Since UTF-8 is backwards compatible with US-ASCII and
+                # outgoing messages sent from the command line will be
+                # in UTF-8 without an Alphabet option, this will work.
+                charset = 'utf-8'
 
             m.add_header('message_id', message_id)
             m.add_header('text', m.get_payload().decode(charset))
