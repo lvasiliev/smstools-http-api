@@ -4,6 +4,8 @@
 import os
 import tempfile
 
+from werkzeug.security import check_password_hash
+
 from flask import Flask
 from flask import jsonify
 from flask import make_response
@@ -18,6 +20,16 @@ auth = HTTPBasicAuth()
 
 # Read config file
 app.config.from_object('config')
+
+if app.config.get('HASHED_PASSWORDS', False):
+    iterations = app.config.get('DEFAULT_HASH_ITERATIONS', 10000)
+    default_hash = 'pbkdf2:sha1:{}$_$'.format(iterations)  # invalid hash (if _ is never a salt)
+    @auth.verify_password
+    def verify(username, password):
+        # if the user doesn't exist, check against the invalid hash anyway to avoid a timing side-channel
+        hashed_password = app.config['USERS'].get(username, default_hash)
+        return check_password_hash(hashed_password, password)
+
 
 # Setup logging
 if not app.debug:
@@ -60,7 +72,7 @@ def write_sms(sms):
                     f.write('Alphabet: UCS\n')
                 f.write('To: ' + mobile + '\n\n')
                 f.write(msg)
-                f.close
+                f.close()
                 os.rename(msg_file_lock, msg_file)
                 os.chmod(msg_file, 0666)
                 app.logger.info('Message from %s to %s placed to the spooler %s' % (auth.username(), mobile, msg_file))
@@ -156,6 +168,30 @@ def create_sms():
         'mobiles': request.json['mobiles'],
         'text': request.json['text'],
     }
+
+    result = write_sms(sms)
+    return jsonify(result), 201
+
+
+@app.route('/api/v1.0/sms/simple_send', methods=['GET'])
+@auth.login_required
+def simple_send_sms():
+    if not request.args:
+        return bad_request('missing required params')
+    if not request.args.has_key('to'):
+        return bad_request('missing required params')
+    if not request.args.has_key('text'):
+        return bad_request('missing required params')
+
+    app.logger.debug('request.args: {}'.format(request.args))
+    app.logger.debug('to: {}'.format(request.args.getlist('to')))
+
+    sms = {
+        'mobiles': request.args.getlist('to'),
+        'text': request.args['text']
+    }
+
+    app.logger.info(sms)
 
     result = write_sms(sms)
     return jsonify(result), 201

@@ -21,3 +21,6 @@ __pycache__
 
 # Installer logs
 pip-log.txt
+
+# pycharm
+.idea
