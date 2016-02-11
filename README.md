@@ -60,7 +60,7 @@ API Documentation
 
     If `USER_WHITELIST` option is enabled in the `config.py`, number access control lists are applied.
 
-- `GET /api/v1.0/sms/outgoing?text=Hi+Jack!&mobiles=79680000000,79160000000`
+- `GET /api/v1.0/sms/outgoing`
 
     Send a new SMS.
 
@@ -91,7 +91,7 @@ API Documentation
 Example
 -------
 
-To send an SMS with `curl` installed:
+To send an SMS with `curl` installed (POST):
 
     $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" -d '{"text":"Hi, Jack!", "mobiles":["79680000000", "79160000000"]}' http://127.0.0.1:5000/api/v1.0/sms/outgoing
 
@@ -115,6 +115,9 @@ Should result in:
       "sent_text": "Hi, Jack!"
     }
 
+To send an SMS with `curl` installed (GET):
+
+    $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" 'http://127.0.0.1:5000/api/v1.0/sms/outgoing?text=Hi+Jack!&mobiles=79680000000,79160000000'
 
 To inquire about a sent SMS:
 
