@@ -58,7 +58,13 @@ API Documentation
 
     Status code 400 (Bad Request) is returned in case of a failure to parse input data.
 
-    If `MOBILE_PERMS` option is enabled in the `config.py`, number access control lists are applied.
+    If `USER_WHITELIST` option is enabled in the `config.py`, number access control lists are applied.
+
+- `GET /api/v1.0/sms/outgoing?text=Hi+Jack!&mobiles=79680000000,79160000000`
+
+    Send a new SMS.
+
+    The parameters must contain a `mobiles` (separate each entry with comma) and `text` fields. Status code 201 is returned on success. Body of the response contains following JSON object as describe above.
 
 
 - `GET /api/v1.0/sms/<kind>/<string:message_id>`
@@ -79,6 +85,8 @@ API Documentation
     Where `kind` can be one of `incoming`, `outgoing`, `checked`, `failed`, or `sent`. Body of the response contains a JSON object with a single field:
 
     - `message_id` - List of identifiers of the messages of given `kind`.
+    - `limit` -  Output limit for message_id (false for unlimited).
+    - `total_count` - Count of list message_id.
 
 Example
 -------
@@ -93,17 +101,24 @@ Should result in:
     Content-Type: application/json
 
     {
-      "message_id": {
-        "79160000000": "smsgw.http.2bpDiR",
-        "79680000000": "smsgw.http.ML5dOj"
+      "mobiles": {
+        "79160000000": {
+          "message_id": "f22f4f49-eb75-44d8-9690-7ac6d5b607a0",
+          "response": "Ok"
+        },
+        "79680000000": {
+          "message_id": "0be8248b-1711-4257-b766-18fcac2babcb",
+          "response": "Ok"
+        },
       },
       "parts_count": 1,
       "sent_text": "Hi, Jack!"
     }
 
+
 To inquire about a sent SMS:
 
-    $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" http://127.0.0.1:5000/api/v1.0/sms/sent/smsgw.http.2bpDiR
+    $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" http://127.0.0.1:5000/api/v1.0/sms/sent/83c201e0-c093-47ee-9ab1-e968cbc58446
 
 Should result in:
 
@@ -116,13 +131,13 @@ Should result in:
       "To": "79160000000",
       "Modem": "GSM1",
       "IMSI": "230000000000000",
-      "message_id": "smsgw.http.2bpDiR"
+      "message_id": "83c201e0-c093-47ee-9ab1-e968cbc58446"
       "text": "Hi, Jack!",
     }
 
 Using a wrong `message_id`:
 
-    $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" http://127.0.0.1:5000/api/v1.0/sms/sent/smsgw.http.TqvEdt
+    $ curl -u lvv:SecretPAss -i -H "Content-Type: application/json; charset=UTF-8" http://127.0.0.1:5000/api/v1.0/sms/sent/7b533050-d5a0-4b52-b8ba-f5d2ed42e630f
 
 Should result in:
 
@@ -130,7 +145,8 @@ Should result in:
     Content-Type: application/json
 
     {
-      "error": "Not found"
+      "message: ": "Not found: http://127.0.0.1:5000/api/v1.0/sms/outgoing/7b533050-d5a0-4b52-b8ba-f5d2ed42e630f",
+      "status: ": 404
     }
 
 Listing all received messages:
@@ -143,7 +159,9 @@ Should result in:
     Content-Type: application/json
 
     {
-      "message_id": ["smsgw.http.2bpDiR", "smsgw.http.qMQagG"]
+      "limit": 10000,
+      "message_id": ["feabbf50-0a55-488e-af0c-026cd3a5d10d", "4935165a-606d-450e-ad91-0086483e4ecc"],
+      "total_count": 2
     }
 
 And that is all.
