@@ -93,7 +93,12 @@ def send_sms(data):
         result['mobiles'][mobile]['message_id'] = message_id
         status_url = request.url.replace(os.path.basename(current_app.config['OUTGOING']),
                                          os.path.basename(current_app.config['SENT']))
-        result['mobiles'][mobile]['dlr_status'] = status_url.split('?')[0] + '/{0}'.format(message_id)
+        if current_app.config.get('STATUS_URL'):
+            result['mobiles'][mobile]['dlr_status'] = os.path.join(current_app.config.get('STATUS_URL'), message_id)
+        else:
+            status_url = request.url.replace(os.path.basename(current_app.config['OUTGOING']),
+                                             os.path.basename(current_app.config['SENT']))
+            result['mobiles'][mobile]['dlr_status'] = os.path.join(status_url.split('?')[0], message_id)
 
         if not validate_mobile(mobile):
             current_app.logger.info('Message from [%s] to [%s] have invalid mobile number' % (auth.username(), mobile))
