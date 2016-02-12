@@ -32,9 +32,6 @@ class ProductionConfig(Config):
     # username:$apr1$qSS22H6v$sem/.bUQXjGUIIHb.MXLw1
     HTPASSWD_PATH="/usr/local/etc/smstools-http-api/htpasswd.users"
 
-    # Status url if you running apps behind http(s) proxy (like nginx)
-    #STATUS_URL = 'https://api.sms.domain/api/v1.0/sms/send'
-
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
