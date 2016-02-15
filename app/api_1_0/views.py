@@ -44,14 +44,14 @@ def outgoing_view():
         if required_field not in request_object:
             return bad_request('Missing required: {0}'.format(required_field))
     if type(request_object['mobiles']) is not list:
-        return bad_request("mobiles is not array")
+        return bad_request('mobiles is not array')
     if len(request_object['mobiles']) == 0:
         return bad_request('mobiles array is empty')
     for mobile in request_object['mobiles']:
         if type(mobile) is not unicode:
-            return bad_request("mobiles is not unicode")
+            return bad_request('mobiles is not unicode')
     if type(request_object['text']) is not unicode:
-        return bad_request("text is not unicode")
+        return bad_request('text is not unicode')
 
     data = {
         'mobiles': request_object['mobiles'],
