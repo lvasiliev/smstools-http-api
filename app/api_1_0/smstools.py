@@ -63,7 +63,6 @@ def get_some_sms(kind, message_id):
         return not_found(None)
 
 def detect_coding(text):
-    parts_count = 0
     text_len=len(text)
     try:
         parts_count = text_len / 153 + (text_len % 153 > 0)
