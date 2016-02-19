@@ -79,7 +79,7 @@ def send_sms(data):
     text, coding, parts_count = detect_coding(data['text'])
 
     result = {
-        'sent_text': text,
+        'sent_text': data['text'],
         'parts_count': parts_count,
         'mobiles': {}
     }
