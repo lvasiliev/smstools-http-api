@@ -28,6 +28,7 @@ def list_some_sms(kind):
 
     limit = current_app.config.get('LIMIT') or False
     message_ids = os.listdir(current_app.config[kind.upper()])
+    message_ids = [mid for mid in message_ids if not mid.endswith('.LOCK')]
     total_count = len(message_ids)
     result = {}
     result['total_count'] = total_count
