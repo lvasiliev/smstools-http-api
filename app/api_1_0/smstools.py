@@ -58,6 +58,8 @@ def get_some_sms(kind, message_id):
             result = dict(m)
             if result['From'] == auth.username():
                 return jsonify(result)
+            elif 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+                return jsonify(result)
             else:
                 return forbidden(None)
     except EnvironmentError:
