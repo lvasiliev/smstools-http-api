@@ -6,6 +6,9 @@ class Config:
     # Valid message kinds (also spooler directories).
     KINDS = ['incoming', 'outgoing', 'checked', 'failed', 'sent']
 
+    # Accounts who may access to all messages
+    #ADMIN_ACCOUNTS = ['superadm']
+
     # Limit for list messages of given kind.
     #LIMIT = 10000
 
