@@ -3,6 +3,9 @@
 
 from flask import Flask
 from config import config
+import os
+
+app = None
 
 def create_app(config_name):
     app = Flask(__name__)
@@ -16,4 +19,5 @@ def create_app(config_name):
     return app
 
 if __name__ == '__main__':
+    create_app(os.getenv('FLASK_CONFIG') or 'default')
     app.run()
