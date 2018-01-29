@@ -21,6 +21,11 @@ def list_some_sms(kind):
 def get_some_sms_view(kind, message_id):
     return smstools.get_some_sms(kind, message_id)
 
+@api_1_0.route('/sms/<kind>/<message_id>', methods=['DELETE'])
+@auth.login_required
+def delete_sms_view(kind, message_id):
+    return smstools.delete_some_sms(kind, message_id)
+
 @api_1_0.route('/sms/outgoing', methods=['GET', 'POST'])
 @auth.login_required
 def outgoing_view():

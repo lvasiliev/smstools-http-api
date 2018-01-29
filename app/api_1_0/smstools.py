@@ -37,6 +37,22 @@ def list_some_sms(kind):
 
     return jsonify(result)
 
+
+def delete_some_sms(kind, message_id):
+    if kind not in current_app.config['KINDS']:
+        return not_found(None)
+    try:
+        os.remove(current_app.config[kind.upper()] + "/" + message_id)
+
+    except OSError:
+        return not_found(None)
+
+    result = {}
+    result['deleted'] = kind + '/' + message_id
+
+    return jsonify(result)
+
+
 def get_some_sms(kind, message_id):
     if kind not in current_app.config['KINDS']:
         return not_found(None)
