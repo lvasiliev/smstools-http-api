@@ -78,6 +78,18 @@ API Documentation
 
     Status code 404 (Not Found) signifies that no message with such an `message_id` has been found.
 
+
+- `DELETE /api/v1.0/sms/<kind>/<string:message_id>`
+
+    Delete a message.
+
+    Where `kind` can be one of `incoming`, `outgoing`, `checked`, `failed`, or `sent`. Body of the response contains a JSON object with all headers and following two fields:
+
+    - `deleted` - Unique identifier of the message.(<kind>/<message_id>)
+
+    Status code 404 (Not Found) signifies that no message with such an `message_id` has been found.
+
+
 - `GET /api/v1.0/sms/<kind>/`
 
     List messages of given `kind`.
