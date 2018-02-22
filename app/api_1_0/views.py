@@ -53,10 +53,17 @@ def outgoing_view():
         return bad_request('mobiles is not array')
     if len(request_object['mobiles']) == 0:
         return bad_request('mobiles array is empty')
+
+    try:
+        unicode_str = unicode()
+    except NameError:
+        unicode_str = str()
+
     for mobile in request_object['mobiles']:
-        if type(mobile) is not unicode:
+        if type(mobile) is not type(unicode_str):
             return bad_request('mobiles is not unicode')
-    if type(request_object['text']) is not unicode:
+
+    if type(request_object['text']) is not type(unicode_str):
         return bad_request('text is not unicode')
 
     data = {

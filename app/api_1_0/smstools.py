@@ -12,7 +12,7 @@ from .authentication import auth
 from .errors import not_found, forbidden
 
 def access_mobile(mobile):
-    if not current_app.config.has_key('USER_WHITELIST'):
+    if not 'USER_WHITELIST' in current_app.config.keys():
         # Number access control disabled.
         return True
     if current_app.config['USER_WHITELIST'].get(auth.username()):
@@ -22,6 +22,11 @@ def access_mobile(mobile):
 
 def validate_mobile(mobile):
     return re.match(r'^\+?\d+$', mobile) and True
+
+def is_admin(user):
+    if 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+        return True
+    return False
 
 def list_some_sms(kind):
     if kind not in current_app.config['KINDS']:
@@ -42,7 +47,7 @@ def delete_some_sms(kind, message_id):
     if kind not in current_app.config['KINDS']:
         return not_found(None)
 
-    if 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+    if is_admin(auth.username()):
         result = {}
         try:
             os.remove(current_app.config[kind.upper()] + "/" + message_id)
@@ -74,7 +79,7 @@ def get_some_sms(kind, message_id):
             result = dict(m)
             if result['From'] == auth.username():
                 return jsonify(result)
-            elif 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+            elif is_admin(auth.username()):
                 return jsonify(result)
             else:
                 return forbidden(None)
@@ -84,11 +89,11 @@ def get_some_sms(kind, message_id):
 def detect_coding(text):
     text_len=len(text)
     try:
-        parts_count = text_len / 153 + (text_len % 153 > 0)
+        parts_count = text_len // 153 + (text_len % 153 > 0)
         text = text.encode('iso8859-15')
         coding = 'ISO'
     except UnicodeEncodeError:
-        parts_count = text_len / 67 + (text_len % 67 > 0)
+        parts_count = text_len // 67 + (text_len % 67 > 0)
         text = text.encode('utf-16-be')
         coding = 'UCS2'
 
