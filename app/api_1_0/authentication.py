@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from flask import current_app, g
-from flask.ext.httpauth import HTTPBasicAuth
+from flask_httpauth import HTTPBasicAuth
 from .errors import unauthorized
 
 from ..lib.htpasswd import check_password, read_htpasswd

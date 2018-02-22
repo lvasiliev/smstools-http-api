@@ -88,6 +88,7 @@ API Documentation
     - `deleted` - Unique identifier of the message.(<kind>/<message_id>)
 
     Status code 404 (Not Found) signifies that no message with such an `message_id` has been found.
+    Status code 403 (Forbidden) signifies that auth user not found in ADMIN_ACCOUNTS.
 
 
 - `GET /api/v1.0/sms/<kind>/`
