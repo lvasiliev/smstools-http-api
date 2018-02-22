@@ -43,7 +43,7 @@ def delete_some_sms(kind, message_id):
 
     if 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
         result = {}
-        try
+        try:
             os.remove(current_app.config[kind.upper()] + "/" + message_id)
             result['deleted'] = kind + '/' + message_id
             return jsonify(result)
