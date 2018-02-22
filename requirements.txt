@@ -1,8 +1,9 @@
-Flask==0.10.1
-Flask-HTTPAuth==2.3.0
-Flask-Script==2.0.5
-Jinja2==2.7.3
-MarkupSafe==0.23
-Werkzeug==0.9.6
+click==6.7
+Flask==0.12.2
+Flask-HTTPAuth==3.2.3
+Flask-Script==2.0.6
 itsdangerous==0.24
-wsgiref==0.1.2
+Jinja2==2.10
+MarkupSafe==1.0
+Werkzeug==0.14.1
+wheel==0.24.0
