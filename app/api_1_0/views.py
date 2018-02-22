@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
 from flask import request, jsonify
 from . import api_1_0
 from .errors import bad_request

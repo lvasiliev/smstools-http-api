@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
 from flask import current_app, g
 from flask_httpauth import HTTPBasicAuth
 from .errors import unauthorized
