@@ -3,12 +3,6 @@
 from flask import jsonify, request
 from . import api_1_0
 
-@api_1_0.app_errorhandler(301)
-def redirecting(exception):
-    response = jsonify({'status: ': 301, 'message: ': 'Location: ' + exception[0]})
-    response.status_code = 301
-    return response
-
 @api_1_0.app_errorhandler(400)
 def bad_request(exception):
     response = {'status: ': 400, 'message: ': 'Bad request: ' + request.url}
