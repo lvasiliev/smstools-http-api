@@ -1,2 +1,4 @@
 *.py[cod]
 /venv/
+.idea
+tmp

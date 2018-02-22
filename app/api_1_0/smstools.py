@@ -4,14 +4,15 @@
 import re
 import os
 import uuid
-from email.parser import Message, Parser
+from email.parser import Parser
+from email.message import Message
 from email.generator import Generator
 from flask import current_app, request, jsonify
 from .authentication import auth
 from .errors import not_found, forbidden
 
 def access_mobile(mobile):
-    if not current_app.config.has_key('USER_WHITELIST'):
+    if not 'USER_WHITELIST' in current_app.config.keys():
         # Number access control disabled.
         return True
     if current_app.config['USER_WHITELIST'].get(auth.username()):
@@ -69,7 +70,7 @@ def get_some_sms(kind, message_id):
                 charset = 'utf-8'
 
             m.add_header('message_id', message_id)
-            m.add_header('text', m.get_payload().decode(charset))
+            m.add_header('text', m.get_payload())
             result = dict(m)
             if result['From'] == auth.username():
                 return jsonify(result)
@@ -129,7 +130,7 @@ def send_sms(data):
 
             msg_file = lock_file.split('.LOCK')[0]
             os.rename(lock_file, msg_file)
-            os.chmod(msg_file, 0660)
+            os.chmod(msg_file, 0o660)
             current_app.logger.info('Message from [%s] to [%s] placed to the spooler as [%s]' % (auth.username(), mobile, msg_file))
             result['mobiles'][mobile]['response'] = 'Ok'
         else:

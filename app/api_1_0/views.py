@@ -5,7 +5,7 @@ from . import api_1_0
 from .errors import bad_request
 from .authentication import auth
 
-import smstools
+from .smstools import *
 
 @api_1_0.route('/monitoring', methods=['GET'])
 def monitoring_view():
@@ -14,12 +14,12 @@ def monitoring_view():
 @api_1_0.route('/sms/<kind>/', methods=['GET'])
 @auth.login_required
 def list_some_sms(kind):
-    return smstools.list_some_sms(kind)
+    return list_some_sms(kind)
 
 @api_1_0.route('/sms/<kind>/<message_id>', methods=['GET'])
 @auth.login_required
 def get_some_sms_view(kind, message_id):
-    return smstools.get_some_sms(kind, message_id)
+    return get_some_sms(kind, message_id)
 
 @api_1_0.route('/sms/<kind>/<message_id>', methods=['DELETE'])
 @auth.login_required
@@ -53,9 +53,9 @@ def outgoing_view():
     if len(request_object['mobiles']) == 0:
         return bad_request('mobiles array is empty')
     for mobile in request_object['mobiles']:
-        if type(mobile) is not unicode:
+        if type(mobile) is not str:
             return bad_request('mobiles is not unicode')
-    if type(request_object['text']) is not unicode:
+    if type(request_object['text']) is not str:
         return bad_request('text is not unicode')
 
     data = {
@@ -63,5 +63,5 @@ def outgoing_view():
         'text': request_object['text'],
     }
 
-    result = smstools.send_sms(data)
+    result = send_sms(data)
     return jsonify(result)
