@@ -3,13 +3,24 @@
 
 import re
 import os
+import sys
 import uuid
-from email.parser import Parser
 from email.message import Message
-from email.generator import Generator
 from flask import current_app, request, jsonify
 from .authentication import auth
 from .errors import not_found, forbidden
+
+python_ver = sys.version_info
+python3_ver = (3, 0)
+
+if python_ver >= python3_ver:
+    use_python3 = True
+    read_mode = "rb"
+    write_mode = "wb"
+else:
+    use_python3 = False
+    read_mode = "r"
+    write_mode = "w"
 
 def access_mobile(mobile):
     if not 'USER_WHITELIST' in current_app.config.keys():
@@ -62,21 +73,34 @@ def get_some_sms(kind, message_id):
     if kind not in current_app.config['KINDS']:
         return not_found(None)
     try:
-        with open(os.path.join(current_app.config[kind.upper()], message_id)) as fp:
-            p = Parser()
-            m = p.parse(fp)
+        with open(os.path.join(current_app.config[kind.upper()], message_id), read_mode) as fp:
+            header_flag = True
+            result = {}
 
-            if m.get('Alphabet', '').startswith('UCS'):
-                charset = 'utf-16-be'
-            else:
-                # Since UTF-8 is backwards compatible with US-ASCII and
-                # outgoing messages sent from the command line will be
-                # in UTF-8 without an Alphabet option, this will work.
-                charset = 'utf-8'
+            for line in fp:
+                line = line.decode('utf-8')
+                if line == os.linesep:
+                    header_flag = False
+                if header_flag == True:
+                    try:
+                        key, val = line.split(':')
+                        result[key] = val.strip()
+                    except ValueError:
+                        pass
+                # text message
+                if header_flag == False:
+                    if result.get('Alphabet', '').startswith('UCS'):
+                        charset = 'utf-16-be'
+                    else:
+                        # Since UTF-8 is backwards compatible with US-ASCII and
+                        # outgoing messages sent from the command line will be
+                        # in UTF-8 without an Alphabet option, this will work.
+                        charset = 'utf-8'
+                    for line in fp:
+                        result['text'] = result.get('text', '') + line.decode(charset)
 
-            m.add_header('message_id', message_id)
-            m.add_header('text', m.get_payload().decode(charset))
-            result = dict(m)
+            result['message_id'] = message_id
+
             if result['From'] == auth.username():
                 return jsonify(result)
             elif is_admin(auth.username()):
@@ -130,8 +154,11 @@ def send_sms(data):
             m.add_header('Alphabet', coding)
             m.set_payload(text)
 
-            with open(lock_file, 'w') as fp:
-                fp.write(m.as_string())
+            with open(lock_file, write_mode) as fp:
+                if use_python3:
+                    fp.write(m.as_bytes())
+                else:
+                    fp.write(m.as_string())
 
             msg_file = lock_file.split('.LOCK')[0]
             os.rename(lock_file, msg_file)
