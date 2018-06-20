@@ -114,7 +114,7 @@ def detect_coding(text):
     text_len=len(text)
     try:
         parts_count = text_len // 153 + (text_len % 153 > 0)
-        text = text.encode('iso8859-15')
+        text = text.encode('ascii')
         coding = 'ISO'
     except UnicodeEncodeError:
         parts_count = text_len // 67 + (text_len % 67 > 0)
