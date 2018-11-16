@@ -3,23 +3,17 @@
 from flask import jsonify, request
 from . import api_1_0
 
-@api_1_0.app_errorhandler(301)
-def redirecting(exception):
-    response = jsonify({'status: ': 301, 'message: ': 'Location: ' + exception[0]})
-    response.status_code = 301
-    return response
-
 @api_1_0.app_errorhandler(400)
 def bad_request(exception):
     response = {'status: ': 400, 'message: ': 'Bad request: ' + request.url}
-    response['reason'] = unicode(exception)
+    response['reason'] = (exception)
     response = jsonify(response)
     response.status_code = 400
     return response
 
 def unauthorized(exception):
     response = {'status: ': 401, 'message: ': 'Unauthorized: ' + request.url}
-    response['reason'] = unicode(exception)
+    response['reason'] = (exception)
     response = jsonify(response)
     response.status_code = 401
     return response

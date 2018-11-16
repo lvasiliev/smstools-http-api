@@ -3,15 +3,27 @@
 
 import re
 import os
+import sys
 import uuid
-from email.parser import Message, Parser
-from email.generator import Generator
+from email.message import Message
 from flask import current_app, request, jsonify
 from .authentication import auth
 from .errors import not_found, forbidden
 
+python_ver = sys.version_info
+python3_ver = (3, 0)
+
+if python_ver >= python3_ver:
+    use_python3 = True
+    read_mode = "rb"
+    write_mode = "wb"
+else:
+    use_python3 = False
+    read_mode = "r"
+    write_mode = "w"
+
 def access_mobile(mobile):
-    if not current_app.config.has_key('USER_WHITELIST'):
+    if not 'USER_WHITELIST' in current_app.config.keys():
         # Number access control disabled.
         return True
     if current_app.config['USER_WHITELIST'].get(auth.username()):
@@ -21,6 +33,11 @@ def access_mobile(mobile):
 
 def validate_mobile(mobile):
     return re.match(r'^\+?\d+$', mobile) and True
+
+def is_admin(user):
+    if 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+        return True
+    return False
 
 def list_some_sms(kind):
     if kind not in current_app.config['KINDS']:
@@ -37,44 +54,56 @@ def list_some_sms(kind):
 
     return jsonify(result)
 
-
 def delete_some_sms(kind, message_id):
     if kind not in current_app.config['KINDS']:
         return not_found(None)
-    try:
-        os.remove(current_app.config[kind.upper()] + "/" + message_id)
 
-    except OSError:
-        return not_found(None)
+    if is_admin(auth.username()):
+        result = {}
+        try:
+            os.remove(current_app.config[kind.upper()] + "/" + message_id)
+            result['deleted'] = kind + '/' + message_id
+            return jsonify(result)
+        except OSError:
+            return not_found(None)
 
-    result = {}
-    result['deleted'] = kind + '/' + message_id
-
-    return jsonify(result)
-
+    return forbidden(None)
 
 def get_some_sms(kind, message_id):
     if kind not in current_app.config['KINDS']:
         return not_found(None)
     try:
-        with open(os.path.join(current_app.config[kind.upper()], message_id)) as fp:
-            p = Parser()
-            m = p.parse(fp)
+        with open(os.path.join(current_app.config[kind.upper()], message_id), read_mode) as fp:
+            header_flag = True
+            result = {}
 
-            if m.get('Alphabet', '').startswith('UCS'):
-                charset = 'utf-16-be'
-            else:
-                # Since UTF-8 is backwards compatible with US-ASCII and
-                # outgoing messages sent from the command line will be
-                # in UTF-8 without an Alphabet option, this will work.
-                charset = 'utf-8'
+            for line in fp:
+                line = line.decode('utf-8')
+                if line == os.linesep:
+                    header_flag = False
+                if header_flag == True:
+                    try:
+                        key, val = line.split(':')
+                        result[key] = val.strip()
+                    except ValueError:
+                        pass
+                # text message
+                if header_flag == False:
+                    if result.get('Alphabet', '').startswith('UCS'):
+                        charset = 'utf-16-be'
+                    else:
+                        # Since UTF-8 is backwards compatible with US-ASCII and
+                        # outgoing messages sent from the command line will be
+                        # in UTF-8 without an Alphabet option, this will work.
+                        charset = 'utf-8'
+                    for line in fp:
+                        result['text'] = result.get('text', '') + line.decode(charset)
 
-            m.add_header('message_id', message_id)
-            m.add_header('text', m.get_payload().decode(charset))
-            result = dict(m)
+            result['message_id'] = message_id
+
             if result['From'] == auth.username():
                 return jsonify(result)
-            elif 'ADMIN_ACCOUNTS' in current_app.config and auth.username() in current_app.config['ADMIN_ACCOUNTS']:
+            elif is_admin(auth.username()):
                 return jsonify(result)
             else:
                 return forbidden(None)
@@ -84,11 +113,11 @@ def get_some_sms(kind, message_id):
 def detect_coding(text):
     text_len=len(text)
     try:
-        parts_count = text_len / 153 + (text_len % 153 > 0)
-        text = text.encode('iso8859-15')
+        parts_count = text_len // 153 + (text_len % 153 > 0)
+        text = text.encode('ascii')
         coding = 'ISO'
     except UnicodeEncodeError:
-        parts_count = text_len / 67 + (text_len % 67 > 0)
+        parts_count = text_len // 67 + (text_len % 67 > 0)
         text = text.encode('utf-16-be')
         coding = 'UCS2'
 
@@ -125,17 +154,19 @@ def send_sms(data):
             m.add_header('Alphabet', coding)
             m.set_payload(text)
 
-            with open(lock_file, 'w') as fp:
-                fp.write(m.as_string())
+            with open(lock_file, write_mode) as fp:
+                if use_python3:
+                    fp.write(m.as_bytes())
+                else:
+                    fp.write(m.as_string())
 
             msg_file = lock_file.split('.LOCK')[0]
             os.rename(lock_file, msg_file)
-            os.chmod(msg_file, 0660)
+            os.chmod(msg_file, 0o660)
             current_app.logger.info('Message from [%s] to [%s] placed to the spooler as [%s]' % (auth.username(), mobile, msg_file))
             result['mobiles'][mobile]['response'] = 'Ok'
         else:
             current_app.logger.info('Message from [%s] to [%s] have forbidden mobile number' % (auth.username(), mobile))
-            current_app.logger.info('Forbidden to send message from [%s] to [%s]' % (auth.username(), mobile))
             result['mobiles'][mobile]['response'] = 'Failed: forbidden mobile number'
 
     return result

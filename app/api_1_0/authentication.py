@@ -1,27 +1,24 @@
 #!/usr/bin/env python
 
+from __future__ import unicode_literals
 from flask import current_app, g
-from flask.ext.httpauth import HTTPBasicAuth
+from flask_httpauth import HTTPBasicAuth
 from .errors import unauthorized
+from passlib.apache import HtpasswdFile
 
-from ..lib.htpasswd import check_password, read_htpasswd
 auth = HTTPBasicAuth()
 
 @auth.verify_password
 def verify_password(login, password):
     try:
-        users_ht = read_htpasswd(current_app.config['HTPASSWD_PATH'])
+        htpasswd_file = HtpasswdFile(current_app.config['HTPASSWD_PATH'])
     except EnvironmentError:
         return False
 
-    if login in users_ht:
-        password_hash = users_ht[login]
-        if check_password(password, password_hash):
-            return True
-        else:
-            g.reason = 'invalid password'
+    if htpasswd_file.check_password(login, password):
+        return True
     else:
-        g.reason = 'invalid login'
+        g.reason = 'invalid password'
 
     return False
 
