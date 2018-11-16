@@ -129,7 +129,8 @@ def send_sms(data):
     result = {
         'sent_text': data['text'],
         'parts_count': parts_count,
-        'mobiles': {}
+        'mobiles': {},
+        'queue': data['queue']
     }
 
     for mobile in data['mobiles']:
@@ -152,6 +153,7 @@ def send_sms(data):
             m.add_header('From', auth.username())
             m.add_header('To', mobile)
             m.add_header('Alphabet', coding)
+            m.add_header('Queue', result['queue'])
             m.set_payload(text)
 
             with open(lock_file, write_mode) as fp:
