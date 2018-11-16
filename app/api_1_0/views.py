@@ -69,7 +69,6 @@ def outgoing_view():
     data = {
         'mobiles': request_object['mobiles'],
         'text': request_object['text'],
-        'queue' : request_object['queue'],
     }
 
     result = send_sms(data)
