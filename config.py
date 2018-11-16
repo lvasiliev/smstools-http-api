@@ -9,6 +9,9 @@ class Config:
     # Accounts who may access to all messages
     #ADMIN_ACCOUNTS = ['superadm']
 
+    # Default queue for send message, if not set, keep smsd choose the default queue
+    #DEFAULTQUEUE = "GSM1"
+
     # Limit for list messages of given kind.
     #LIMIT = 10000
 

@@ -152,6 +152,9 @@ def send_sms(data):
             m.add_header('From', auth.username())
             m.add_header('To', mobile)
             m.add_header('Alphabet', coding)
+            if data.get('queue'):
+                result.update({'queue' : data['queue']})
+                m.add_header('Queue', result.get('queue'))
             m.set_payload(text)
 
             with open(lock_file, write_mode) as fp:
