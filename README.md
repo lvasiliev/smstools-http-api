@@ -182,6 +182,6 @@ Should result in:
     }
 
 Link to the APIARY doc:
-[https://smstoolshttpapi.docs.apiary.io](url)
+[https://smstoolshttpapi.docs.apiary.io](https://smstoolshttpapi.docs.apiary.io)
 
 And that is all.
