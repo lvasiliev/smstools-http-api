@@ -55,6 +55,7 @@ API Documentation
     - `message_id` - Mapping of supplied numbers to their corresponding spooler file names (ids).
     - `parts_count` - Tells you how many parts will the SMS be split into.
     - `sent_text` - Original message text.
+    - `queue` - Queue to send message. If queue is not set, you can define DEFAULTQUEUE in config.py or keep smsd choose it.
 
     Status code 400 (Bad Request) is returned in case of a failure to parse input data.
 

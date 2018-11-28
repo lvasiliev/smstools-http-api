@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import unicode_literals
-from flask import request, jsonify
+from flask import current_app, request, jsonify
 from . import api_1_0
 from .errors import bad_request
 from .authentication import auth
@@ -66,9 +66,11 @@ def outgoing_view():
     if type(request_object['text']) is not type(unicode_str):
         return bad_request('text is not unicode')
 
+    queue = request_object.get('queue', current_app.config.get('DEFAULTQUEUE'))
     data = {
         'mobiles': request_object['mobiles'],
         'text': request_object['text'],
+        'queue' : queue
     }
 
     result = send_sms(data)
