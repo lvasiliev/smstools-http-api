@@ -181,4 +181,7 @@ Should result in:
       "total_count": 2
     }
 
+Link to the APIARY doc:
+[https://smstoolshttpapi.docs.apiary.io](url)
+
 And that is all.
