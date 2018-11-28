@@ -1,5 +1,5 @@
 click==6.7
-Flask==0.12.2
+Flask==0.12.3
 Flask-HTTPAuth==3.2.3
 Flask-Script==2.0.6
 itsdangerous==0.24
