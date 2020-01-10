@@ -66,8 +66,16 @@ class DevelopmentConfig(Config):
     # username:$apr1$qSS22H6v$sem/.bUQXjGUIIHb.MXLw1
     HTPASSWD_PATH="htpasswd.users"
 
+class TestConfig(Config):
+    TESTING = True
+    DEBUG = True
+    OUTGOING = "outgoing"
+    SENT = "sent"
+    HTPASSWD_PATH = "htpasswd.users"
+
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'test': TestConfig,
     'default': DevelopmentConfig
 }
